@@ -40,6 +40,7 @@ public class PrecessarResutat extends DefaultHandler {
 				perdedor = new String(ch, start, length);
 				System.out.println("La derrota a sigut per: " + perdedor);
 			}else{
+				System.out.println("");
 				System.out.println("Els lluitadors en enpatat");
 			}
 		}
