@@ -9,12 +9,14 @@ import java.net.CookieManager;
 import java.net.CookiePolicy;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.ProtocolException;
 import java.net.URL;
 import java.util.Scanner;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
+import javax.xml.ws.http.HTTPException;
 
 import org.xml.sax.SAXException;
 
@@ -109,37 +111,56 @@ public class App
 		out.writeBytes(dades);
 		out.flush();
 		out.close();
-		InputStream in = new BufferedInputStream(con.getInputStream());
-
-		SAXParserFactory fabrica=SAXParserFactory.newInstance();
-        fabrica.setNamespaceAware(true);
-        SAXParser parser=fabrica.newSAXParser();
-        parser.parse(in,pr);
+		try{
+			InputStream in = new BufferedInputStream(con.getInputStream());
+			SAXParserFactory fabrica=SAXParserFactory.newInstance();
+	        fabrica.setNamespaceAware(true);
+	        SAXParser parser=fabrica.newSAXParser();
+	        parser.parse(in,pr);
+	        
+	        System.out.println("");
+	        if(pr.esEmpat()){
+	        	System.out.println("Els lluitadors han enpatat");
+	        }else{
+	        	System.out.println("La victoria ha sigut per: " + pr.getVencedor());
+	        	System.out.println("La derrota ha sigut per: " + pr.getPerdedor());
+	        }
+		}catch(IOException e){
+			System.out.println("No existeix");
+		}
 
 		con.disconnect();
 	}
 	
-	private static void mesFort() {
+	private static void mesFort() throws IOException, ParserConfigurationException, SAXException {
 		
-		/*for(Lluitadors lluitador1 : p.getListaLluitadors()){
-	    	System.out.println(lluitador1);
-	    	for(Lluitadors lluitador2 : p.getListaLluitadors()){
-	    		url = new URL("http://localhost:8080/Lluitadors/ring/resultat");
-	    		
-				con.setDoOutput(true);
-				con.setRequestMethod("POST");
-				String dades = "nom1=" + lluitador1 + "&nom2=" + lluitador2;
-				DataOutputStream out = new DataOutputStream(con.getOutputStream());
-				out.writeBytes(dades);
-				out.flush();
-				out.close();
-				
-				int d;
-				while ((d = in.read()) != - 1){
-					System.out.print((char)d);
-				}
-	    	}
-	    }*/
+		PrecessarResutat pr = new PrecessarResutat();
+		String fort = p.getListaLluitadors().get(0).getNom();
+		System.out.println("");
 		
+		for (Lluitadors ll : p.getListaLluitadors()){
+			URL url = new URL("http://localhost:8080/Lluitadors/ring/lluita");
+			HttpURLConnection con = (HttpURLConnection) url.openConnection();
+			
+			con.setDoOutput(true);
+			con.setRequestMethod("POST");
+			String dades = "nom1=" + fort + "&nom2=" + ll.getNom();
+			//String dades = "nom1=AixafaGuitarres&nom2=Matagalls";
+			DataOutputStream out = new DataOutputStream(con.getOutputStream());
+			out.writeBytes(dades);
+			out.flush();
+			out.close();
+			
+			InputStream in = new BufferedInputStream(con.getInputStream());
+			SAXParserFactory fabrica=SAXParserFactory.newInstance();
+	        fabrica.setNamespaceAware(true);
+	        SAXParser parser=fabrica.newSAXParser();
+	        parser.parse(in,pr);
+	        
+	        if(!pr.esEmpat()){
+	        	fort = pr.getVencedor();
+	        }			
+		}
+		System.out.println("El lluitador mes fort es: " + fort);
 	}
 }
